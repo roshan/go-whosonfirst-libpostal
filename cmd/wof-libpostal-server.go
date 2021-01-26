@@ -25,6 +25,12 @@ func main() {
 		logger.Fatal("failed to create parser handler, because %v", err)
 	}
 
+	multi_parser_handler, err := http.MultiParserHandler(logger)
+
+	if err != nil {
+		logger.Fatal("failed to create multi-parser handler, because %v", err)
+	}
+
 	expand_handler, err := http.ExpandHandler(logger)
 
 	if err != nil {
@@ -43,6 +49,7 @@ func main() {
 	mux := gohttp.NewServeMux()
 
 	mux.Handle("/parse", parser_handler)
+	mux.Handle("/multi_parse", multi_parser_handler)
 	mux.Handle("/expand", expand_handler)
 	mux.Handle("/ping", ping_handler)
 

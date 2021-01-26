@@ -40,6 +40,51 @@ func ParserHandler(logger *log.WOFLogger) (gohttp.Handler, error) {
 	return h, nil
 }
 
+func MultiParserHandler(logger *log.WOFLogger) (gohttp.Handler, error) {
+
+	fn := func(rsp gohttp.ResponseWriter, req *gohttp.Request) {
+
+		addresses, err := GetAddressList(req)
+
+		if err != nil {
+			gohttp.Error(rsp, err.Error(), err.Code)
+			return
+		}
+
+		t1 := time.Now()
+
+		defer func() {
+			t2 := time.Since(t1)
+			logger.Status("parse '%s' %v", addresses, t2)
+		}()
+
+		parsed_addresses := make([][]postal.ParsedComponent, len(addresses))
+
+		for i,a := range addresses {
+			if a == "" {
+				parsed_addresses[i] = make([]postal.ParsedComponent, 0)
+			} else {
+				parsed_addresses[i] = postal.ParseAddress(a)
+			}
+		}
+
+		formatted_addresses := make([]map[string][]string, len(parsed_addresses))
+
+		for i,p := range parsed_addresses {
+			if len(p) == 0 {
+				formatted_addresses[i] = make(map[string][]string)
+			} else {
+				formatted_addresses[i] = FormatParsed(p)
+			}
+		}
+
+		WriteResponse(rsp, formatted_addresses)
+	}
+
+	h := gohttp.HandlerFunc(fn)
+	return h, nil
+}
+
 func FormatParsed(parsed []postal.ParsedComponent) map[string][]string {
 
 	rsp := make(map[string][]string)

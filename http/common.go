@@ -3,6 +3,7 @@ package http
 import (
 	"encoding/json"
 	"github.com/whosonfirst/go-sanitize"
+	"io/ioutil"
 	gohttp "net/http"
 	"strings"
 )
@@ -25,6 +26,49 @@ func GetAddress(r *gohttp.Request) (string, *Error) {
 
 	if err != nil {
 		return "", err
+	}
+
+	return q, nil
+}
+
+func GetAddressList(r *gohttp.Request) ([]string, *Error) {
+
+	_, err := IsValidMethod(r, []string{"POST"})
+
+	if err != nil {
+		return make([]string, 0), err
+	}
+
+	queries, err := ParseMultiRequest(r)
+
+	if err != nil {
+		return make([]string, 0), err
+	}
+
+	var addresses = make([]string, len(queries))
+	for i, q := range queries {
+		address, err := ParseQuery(&q)
+		if err != nil {
+			addresses[i] = ""
+		} else {
+			addresses[i] = address
+		}
+	}
+
+	return addresses, nil
+}
+
+func ParseMultiRequest(r *gohttp.Request) ([]Query, *Error) {
+	q := make([]Query, 0)
+
+	bodyBytes, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		return nil, NewError(400, err.Error())
+	}
+
+	err = json.Unmarshal(bodyBytes, &q)
+	if err != nil {
+		return nil, NewError(400, err.Error())
 	}
 
 	return q, nil
