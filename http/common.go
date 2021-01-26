@@ -3,7 +3,6 @@ package http
 import (
 	"encoding/json"
 	"github.com/whosonfirst/go-sanitize"
-	"io/ioutil"
 	gohttp "net/http"
 	"strings"
 )
@@ -61,12 +60,7 @@ func GetAddressList(r *gohttp.Request) ([]string, *Error) {
 func ParseMultiRequest(r *gohttp.Request) ([]Query, *Error) {
 	q := make([]Query, 0)
 
-	bodyBytes, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		return nil, NewError(400, err.Error())
-	}
-
-	err = json.Unmarshal(bodyBytes, &q)
+	err := json.NewDecoder(r.Body).Decode(&q)
 	if err != nil {
 		return nil, NewError(400, err.Error())
 	}
